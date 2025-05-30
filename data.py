@@ -161,30 +161,14 @@ def get_future_reminders():
             entry for entry in reminders_active_database 
             if entry['reminder_id'] == reminder_id and entry['active_from'] > now
         ]
-
-        #Gathering dismissed times 
-        dismissed_times = [
-            entry for entry in reminders_dismissed_database 
-            if entry['reminder_id'] == reminder_id
-        ]
         
         # If the reminder is scheduled to be active later, add it to future reminders
         if future_entries:
             
             #Initializing values and appending to future reminders list
             active_from = min(entry['active_from'] for entry in future_entries)
-            
-            if dismissed_times: 
-                latest_dismissed = max(entry['dismissed_at'] for entry in dismissed_times)
-                
-                # Setting dismissed at dismissed time if its in the future of active_from, else default
-                if latest_dismissed > active_from:
-                    dismissed_at = latest_dismissed
-                else:
-                    dismissed_at = datetime.datetime.fromtimestamp(0)
-
-            else:
-                dismissed_at = datetime.datetime.fromtimestamp(0)
+        
+            dismissed_at = datetime.datetime.fromtimestamp(0)
             
             future_reminders.append({
                 'reminder_id': reminder_id,
@@ -277,54 +261,61 @@ def renew_reminder(reminder_id, active_from):
 def dump_database(database_file):
     """ Writes all reminders "past", "present", and "future" to the database_file in CSV format"""
 
+    all_reminders_to_dump = []
+    
     past_reminders = get_past_reminders()
     active_reminders = get_active_reminders()
     future_reminders = get_future_reminders()
 
-    # Sorting future reminders on the basis of active_from
-    future_reminders.sort(key = lambda reminder: reminder['active_from'])
+    # Adding past, present and future reminders to main list
+    for past_rem in past_reminders:
+        all_reminders_to_dump.append({
+            'reminder_id': past_rem['reminder_id'],
+            'reminder_text': past_rem['reminder_text'],
+            'active_from': past_rem['active_from'],
+            'dismissed_at': past_rem['dismissed_at']
+        })
+
+    #Present
+    for active_rem in active_reminders:
+        all_reminders_to_dump.append({
+            'reminder_id': active_rem['reminder_id'],
+            'reminder_text': active_rem['reminder_text'],
+            'active_from': active_rem['active_from'],
+            'dismissed_at': datetime.datetime.fromtimestamp(0) # Active reminders aren't dismissed right now
+        })
 
     active_rem_ids = [active_rem['reminder_id'] for active_rem in active_reminders]
 
-    active_from = None
-    dismissed_at = datetime.datetime.fromtimestamp(0)
-    
+    #Future
+    for future_rem in future_reminders:
+        future_rem_id = future_rem['reminder_id']
+
+        # adding ones that are not present, to avoid duplicates
+        if future_rem_id not in active_rem_ids:
+            all_reminders_to_dump.append({
+                'reminder_id': future_rem['reminder_id'],
+                'reminder_text': future_rem['reminder_text'],
+                'active_from': future_rem['active_from'],
+                'dismissed_at': future_rem['dismissed_at'] # This should be 1970 timestamp from get_future_reminders
+            })
+
+
+    # Sorting reminders reminders on the basis of active_from and reminder id
+    all_reminders_to_dump.sort(key=lambda x: (x['reminder_id'], x['active_from']))
+
+    # Set up the headers for your CSV file.
     headers = ['reminder_id', 'reminder_text', 'active_from', 'dismissed_at']
 
     # Opening file path and adding header
-    with open(database_file, 'w') as data_file:
+    with open(database_file, 'w', newline= '') as data_file:
         dump_file = csv.writer(data_file)
         dump_file.writerow(headers)
 
-        # writing past reminders from dictionary
-        for past_rem in past_reminders:
+        for rem_data in all_reminders_to_dump:
             dump_file.writerow([
-                past_rem['reminder_id'],
-                past_rem['reminder_text'],
-                past_rem['active_from'],
-                past_rem['dismissed_at']
-                ])
-
-        # Writing present reminders
-        for active_rem in active_reminders:
-            active_rem_id = active_rem['reminder_id']
-            active_rem_text = active_rem['reminder_text']
-            active_from = active_rem['active_from']
-
-            dismissed_at = datetime.datetime.fromtimestamp(0)
-
-            dump_file.writerow([active_rem_id, active_rem_text, active_from, dismissed_at])
-
-        # Writing future reminders that are not also active
-        for future_rem in future_reminders:
-
-            future_rem_id = future_rem['reminder_id']
-
-            if future_rem_id not in active_rem_ids:
-
-                dump_file.writerow([
-                future_rem['reminder_id'],
-                future_rem['reminder_text'],
-                future_rem['active_from'],
-                future_rem['dismissed_at']
-                ]) 
+                rem_data['reminder_id'],
+                rem_data['reminder_text'],
+                rem_data['active_from'].isoformat(sep=' '),
+                rem_data['dismissed_at'].isoformat(sep=' ')
+            ])
