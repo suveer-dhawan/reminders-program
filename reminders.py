@@ -1,9 +1,9 @@
 '''
 Name - Suveer Dhawan
 
-This program improves user interaction with the reminders using data.py. We now give users 
-the option to take a snapshot of the current database by using "dump to " and create a 
-CSV file. 
+This program provides user interaction with the reminders using data.py. The user has options
+to display different types of reminders, dismiss an active reminder, set a new reminder for
+now or a specific date/time, renew them, and dump them to a database. 
 '''
 
 import data

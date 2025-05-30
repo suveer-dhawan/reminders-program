@@ -1,8 +1,9 @@
 '''
 Name - Suveer Dhawan
 
-This program provides access to the reminders data. We now add functionality to dump the 
-database to a CSV file. 
+This program provides access to the reminders data. We have functions to load the database,
+and get active, past, or future reminders from it. We also create functionality for setting
+and dismissing reminders, renewing reminders, and dumping the database to a CSV file. 
 '''
 
 import csv
@@ -161,14 +162,30 @@ def get_future_reminders():
             entry for entry in reminders_active_database 
             if entry['reminder_id'] == reminder_id and entry['active_from'] > now
         ]
+
+        #Gathering dismissed times 
+        dismissed_times = [
+            entry for entry in reminders_dismissed_database 
+            if entry['reminder_id'] == reminder_id
+        ]
         
         # If the reminder is scheduled to be active later, add it to future reminders
         if future_entries:
             
             #Initializing values and appending to future reminders list
             active_from = min(entry['active_from'] for entry in future_entries)
-        
-            dismissed_at = datetime.datetime.fromtimestamp(0)
+            
+            if dismissed_times: 
+                latest_dismissed = max(entry['dismissed_at'] for entry in dismissed_times)
+                
+                # Setting dismissed at dismissed time if its in the future of active_from, else default
+                if latest_dismissed > active_from:
+                    dismissed_at = latest_dismissed
+                else:
+                    dismissed_at = datetime.datetime.fromtimestamp(0)
+
+            else:
+                dismissed_at = datetime.datetime.fromtimestamp(0)
             
             future_reminders.append({
                 'reminder_id': reminder_id,
@@ -178,7 +195,6 @@ def get_future_reminders():
             })
     
     return future_reminders
-
 def set_reminder(reminder_text, active_from):
     """Set a new reminder."""
     
@@ -302,7 +318,7 @@ def dump_database(database_file):
 
 
     # Sorting reminders reminders on the basis of active_from and reminder id
-    all_reminders_to_dump.sort(key=lambda x: (x['reminder_id'], x['active_from']))
+    all_reminders_to_dump.sort(key=lambda x: x['active_from'])
 
     # Set up the headers for your CSV file.
     headers = ['reminder_id', 'reminder_text', 'active_from', 'dismissed_at']
