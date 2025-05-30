@@ -1,0 +1,21 @@
+# Python specific ignores
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE specific ignores (if applicable)
+.vscode/
+.idea/
+
+# Operating System specific ignores
+.DS_Store # macOS
+Thumbs.db # Windows
+
+# Log files or generated outputs
+*.log
+output.csv # If your dump creates a file called output.csv for example
