@@ -78,6 +78,7 @@ data.set_reminder("Pick up dry cleaning", "2025-06-01 10:00:00")
 
 # Dump all reminders to a new CSV file
 data.dump_database('all_reminders_output.csv')
+```
 
 ---
 ## File Structure
@@ -98,6 +99,7 @@ The `now` variable is a fixed timestamp within `data.py`:
 
 ```python
 now = datetime.datetime(2025, 4, 7, 10, 0, 0)
+```
 
 This acts as the reference point for categorizing reminders. You would change this value directly in ```data.py``` to simulate different "current" times for testing or specific scenarios.
 
